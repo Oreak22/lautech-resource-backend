@@ -29,6 +29,7 @@ export interface IResource extends Document {
   keywords: string[];
   aiSummary: string;
   aiConfidenceScore: number;
+  rejectReason: String;
 }
 
 const ResourceSchema = new Schema<IResource>(
@@ -60,6 +61,7 @@ const ResourceSchema = new Schema<IResource>(
     keywords: [{ type: String, trim: true }],
     aiSummary: { type: String },
     aiConfidenceScore: { type: Number },
+    rejectReason: { type: String },
   },
   { timestamps: true },
 );

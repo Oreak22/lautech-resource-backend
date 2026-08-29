@@ -16,15 +16,17 @@ export interface AIAnalysisResult {
   summary: string;
   confidence: number;
 }
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
 export const analyzeStudyMaterial = async (
   buffer: Buffer,
   mimeType: string,
 ): Promise<AIAnalysisResult> => {
-  const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY as string);
   const model = genAI.getGenerativeModel({
-    model: "gemini-1.5-flash",
-    generationConfig: { responseMimeType: "application/json" },
+    model: "gemini-3.6-flash",
+    generationConfig: {
+      responseMimeType: "application/json", // Maintain this to prevent JSON parsing crashes
+    },
   });
 
   const prompt = `You are an academic data extraction assistant for a university. 

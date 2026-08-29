@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { Comment } from "../models/Comment";
-// import { Lecturer } from "../models/Lecturer";
 import { AuthRequest } from "../middlewares/authMiddleware";
+import { Lecturer } from "../models/Lecturer";
 
 // 1. Add a new comment
 export const addComment = async (req: AuthRequest, res: Response) => {
@@ -10,23 +10,23 @@ export const addComment = async (req: AuthRequest, res: Response) => {
     const studentId = req.user!.id;
 
     // Verify the lecturer exists
-    // const lecturerExists = await Lecturer.findById(lecturerId);
-    // if (!lecturerExists) {
-    //   return res
-    //     .status(404)
-    //     .json({ success: false, error: "Lecturer not found" });
-    // }
+    const lecturerExists = await Lecturer.findById(lecturerId);
+    if (!lecturerExists) {
+      return res
+        .status(404)
+        .json({ success: false, error: "Lecturer not found" });
+    }
 
-//     const comment = await Comment.create({
-//       text,
-//       studentId,
-//       lecturerId,
-//     });
+    const comment = await Comment.create({
+      text,
+      studentId,
+      lecturerId,
+    });
 
-//     // Populate the student name before returning so the frontend can render immediately
-//     await comment.populate("studentId", "name");
+    // Populate the student name before returning so the frontend can render immediately
+    await comment.populate("studentId", "name");
 
-//     return res.status(201).json({ success: true, data: comment });
+    return res.status(201).json({ success: true, data: comment });
   } catch (error) {
     return res
       .status(500)
