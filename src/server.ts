@@ -6,11 +6,11 @@ import dotenv from "dotenv";
 import { connectDB } from "./config/db";
 import resourceRoutes from "./routes/resourceRoutes";
 import authRoutes from "./routes/authRoutes";
-import commentRoutes from "./routes/commentRoutes";
 import adminRoutes from "./routes/adminRoutes";
 import courseRouter from "./routes/courseRouter";
 import lecturersRouter from "./routes/lecturersRouter";
 import reviewRoutes from "./routes/reviewRoutes";
+import departmentRoutes from "./routes/departmentRoutes";
 
 dotenv.config();
 connectDB();
@@ -46,11 +46,11 @@ app.get("/health", (req: Request, res: Response) => {
 
 app.use("/api/auth", authRoutes);
 app.use("/api/resources", resourceRoutes);
-app.use("/api/comments", commentRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/courses", courseRouter);
 app.use("/api/lecturers", lecturersRouter);
 app.use("/api/reviews", reviewRoutes);
+app.use("/api/departments", departmentRoutes);
 
 app.listen(PORT, () => {
   console.log(

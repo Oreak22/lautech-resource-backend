@@ -19,6 +19,7 @@ export interface IResource extends Document {
   fileUrl: string;
   fileFormat: string;
   fileSize: number;
+  cloudinaryPublicId: string;
   uploaderId: Types.ObjectId;
   courseId: Types.ObjectId;
   lecturerId: Types.ObjectId;
@@ -43,6 +44,7 @@ const ResourceSchema = new Schema<IResource>(
     fileUrl: { type: String, required: true },
     fileFormat: { type: String, required: true },
     fileSize: { type: Number, required: true },
+    cloudinaryPublicId: { type: String, required: true },
     uploaderId: { type: Schema.Types.ObjectId, ref: "User", required: true },
     courseId: { type: Schema.Types.ObjectId, ref: "Course", required: true },
     lecturerId: {

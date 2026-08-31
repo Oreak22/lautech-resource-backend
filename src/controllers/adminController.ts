@@ -80,7 +80,9 @@ export const rejectResource = async (req: AuthRequest, res: Response) => {
         .json({ success: false, error: "Resource not found" });
 
     // Delete the physical file from Cloudinary to save space
-    await deleteFromCloudinary(resource.fileUrl);
+    if (resource.cloudinaryPublicId) {
+      await deleteFromCloudinary(resource.cloudinaryPublicId);
+    }
 
     // Delete the database record (or change status to REJECTED if you prefer to keep a paper trail)
     await resource.deleteOne();
@@ -111,7 +113,7 @@ export const getAdminAnalytics = async (
       Resource.countDocuments({ status: ResourceStatus.PENDING }),
       Resource.countDocuments({ status: ResourceStatus.APPROVED }),
       Lecturer.countDocuments(),
-      Lecturer.countDocuments({ isVerified: true }),
+      Lecturer.countDocuments({ status: "approved" }),
       User.countDocuments({ role: { $ne: UserRole.ADMIN } }),
     ]);
 

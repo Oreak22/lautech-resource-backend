@@ -11,7 +11,7 @@ import { ObjectId } from "mongoose";
 export const getAllLecturers = async (req: Request, res: Response) => {
   try {
     // Fetch all verified lecturers, sorted alphabetically by name
-    const lecturers = await Lecturer.find({ isVerified: true })
+    const lecturers = await Lecturer.find({ status: "approved" })
       .sort({ name: 1 })
       .select("_id name");
 
@@ -31,7 +31,7 @@ export const getLecturerProfile = async (
   res: Response,
 ): Promise<void> => {
   try {
-    const lecturer = await Lecturer.findById(req.params.id).lean();
+    const lecturer = await Lecturer.findById(req.params.id).populate("departmentId", "name").lean();
     if (!lecturer) {
       res.status(404).json({ success: false, error: "Lecturer not found" });
       return;
@@ -51,9 +51,9 @@ export const getLecturerProfile = async (
       .sort({ createdAt: -1 })
       .lean();
 
-    // Construct the full profile payload
     const profilePayload = {
       ...lecturer,
+      department: (lecturer.departmentId as any)?.name || "Unknown Department",
       // Mocking teachingTags for now since they aren't in the schema yet
       teachingTags: ["Strict Grading", "Detailed Notes", "Research Focused"],
       resources,

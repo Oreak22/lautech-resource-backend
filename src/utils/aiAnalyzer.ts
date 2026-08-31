@@ -57,7 +57,10 @@ export const analyzeStudyMaterial = async (
 
   try {
     const result = await model.generateContent([prompt, fileData]);
-    return JSON.parse(result.response.text()) as AIAnalysisResult;
+    const responseText = result.response.text();
+    // Strip markdown formatting if Gemini wrapped it in ```json ... ```
+    const jsonString = responseText.replace(/^```json\s*/, "").replace(/\s*```$/, "").trim();
+    return JSON.parse(jsonString) as AIAnalysisResult;
   } catch (error) {
     console.error("AI Analysis failed:", error);
     throw new Error("Failed to analyze document format.");

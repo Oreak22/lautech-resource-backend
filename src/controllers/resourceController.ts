@@ -48,10 +48,12 @@ export const uploadResourceFile = async (req: AuthRequest, res: Response) => {
       fileUrl: uploadResult.secure_url,
       fileFormat: req.file.mimetype,
       fileSize: req.file.size,
+      cloudinaryPublicId: uploadResult.public_id,
       uploaderId: user.id,
       courseId,
       lecturerId,
       status: initialStatus,
+      moderatedBy: initialStatus === ResourceStatus.APPROVED ? (user.id as any) : undefined,
       // Injecting AI Metadata
       keywords: aiResult.keywords,
       aiSummary: aiResult.summary,
