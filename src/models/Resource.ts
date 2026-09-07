@@ -25,6 +25,11 @@ export interface IResource extends Document {
   lecturerId: Types.ObjectId;
   status: ResourceStatus;
   moderatedBy?: Types.ObjectId;
+  session?: string;
+  likes: number;
+  dislikes: number;
+  likedBy: Types.ObjectId[];
+  dislikedBy: Types.ObjectId[];
 
   // New AI Fields
   keywords: string[];
@@ -58,6 +63,11 @@ const ResourceSchema = new Schema<IResource>(
       default: ResourceStatus.PENDING,
     },
     moderatedBy: { type: Schema.Types.ObjectId, ref: "User" },
+    session: { type: String, trim: true },
+    likes: { type: Number, default: 0 },
+    dislikes: { type: Number, default: 0 },
+    likedBy: [{ type: Schema.Types.ObjectId, ref: "User" }],
+    dislikedBy: [{ type: Schema.Types.ObjectId, ref: "User" }],
 
     // New AI Fields mapping
     keywords: [{ type: String, trim: true }],

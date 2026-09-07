@@ -3,12 +3,14 @@ import {
   getAllLecturers,
   getLecturerProfile,
   addReview,
+  addLecturer,
 } from "../controllers/lecturerController";
 import { protect } from "../middlewares/authMiddleware"; // Assuming your JWT middleware path
 
 const router = Router();
 
 router.get("/", getAllLecturers);
+router.post("/",protect, addLecturer);
 router.get("/:id/profile", getLecturerProfile);
 
 // Requires user to be logged in to post a review

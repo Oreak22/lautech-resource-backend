@@ -1,4 +1,4 @@
-import { Lecturer } from "../models/Lecturer";
+import { ApprovalStatus, Lecturer } from "../models/Lecturer";
 import { Request, Response } from "express";
 import Review from "../models/Review";
 import { Resource, ResourceStatus } from "../models/Resource";
@@ -8,23 +8,78 @@ import { ObjectId } from "mongoose";
 // interface AuthRequest extends Request {
 //   user?: { _id: string; name: string };
 // }
-export const getAllLecturers = async (req: Request, res: Response) => {
+// export const getAllLecturers = async (req: Request, res: Response) => {
+//   try {
+//     // Fetch all verified lecturers, sorted alphabetically by name
+//     const lecturers = await Lecturer.find({ status: ApprovalStatus.APPROVED })
+//       .sort({ name: 1 })
+//       .select("_id name");
+//     console.log(lecturers);
+//     res.status(200).json({
+//       success: true,
+//       data: lecturers,
+//     });
+//   } catch (error) {
+//     res
+//       .status(500)
+//       .json({ success: false, error: "Failed to fetch lecturers" });
+//   }
+// };
+export const getAllLecturers = async (req: Request, res: Response): Promise<void> => {
   try {
-    // Fetch all verified lecturers, sorted alphabetically by name
-    const lecturers = await Lecturer.find({ status: "approved" })
-      .sort({ name: 1 })
-      .select("_id name");
+    const { search, department, sortBy } = req.query;
+    
+    const query: any = { status: ApprovalStatus.APPROVED};
 
+    if (search) {
+      query.name = { $regex: search as string, $options: 'i' };
+    }
+
+    if (department && department !== 'All') {
+      query.department = department as string;
+    }
+
+    let sortOption: any = { name: 1 };
+
+    if (sortBy === 'department') {
+      sortOption = { department: 1, name: 1 };
+    }
+
+    console.log(query)
+
+    const lecturers = await Lecturer.find(query)
+      .select('_id name department isVerified')
+      .sort(sortOption)
+      .lean();
     res.status(200).json({
       success: true,
+      count: lecturers.length,
       data: lecturers,
     });
-  } catch (error) {
-    res
-      .status(500)
-      .json({ success: false, error: "Failed to fetch lecturers" });
+  } catch (error: unknown) {
+    console.error('Error fetching lecturers:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Server error while fetching lecturer directory.' 
+    });
   }
 };
+
+export const addLecturer = async (req: AuthRequest, res: Response) => {
+  try {
+    const { name, departmentId } = req.body;
+    const existingLecturer = await Lecturer.findOne({ name, departmentId });
+    if (existingLecturer) {
+      return res.status(400).json({ success: false, error: "Lecturer already exists" });
+    }
+    const lecturer = await Lecturer.create({ name, departmentId, submittedBy: req.user?.id, status: ApprovalStatus.APPROVED });
+    res.status(201).json({ success: true, data: lecturer });
+    console.log(lecturer);
+  } catch (error: unknown) {
+    console.error("Error adding lecturer:", error);
+    res.status(500).json({ success: false, error: "Server Error" });
+  }
+}
 
 export const getLecturerProfile = async (
   req: Request,

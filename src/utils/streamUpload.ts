@@ -5,13 +5,13 @@ import { UploadApiResponse, UploadApiErrorResponse } from "cloudinary";
 export const streamUpload = (
   buffer: Buffer,
   folderName: string,
+  fileType: string,
 ): Promise<UploadApiResponse> => {
   return new Promise((resolve, reject) => {
     const stream = cloudinary.uploader.upload_stream(
       {
         folder: folderName,
-        // 'auto' tells Cloudinary to figure out if it's an image, raw file (zip), or pdf
-        resource_type: "auto",
+        resource_type: fileType =='application/pdf'?'raw':'auto',
       },
       (
         error: UploadApiErrorResponse | undefined,

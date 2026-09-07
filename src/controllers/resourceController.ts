@@ -7,8 +7,8 @@ import { UserRole } from "../models/User";
 
 export const uploadResourceFile = async (req: AuthRequest, res: Response) => {
   try {
-    const { title, category, courseId, lecturerId } = req.body;
-    const user = req.user!; // Extracted from protect middleware
+    const { title, category, courseId, lecturerId, session } = req.body;
+    const user = req.user!; 
 
     if (!req.file || !title || !category || !courseId || !lecturerId) {
       return res
@@ -33,6 +33,7 @@ export const uploadResourceFile = async (req: AuthRequest, res: Response) => {
     const uploadResult = await streamUpload(
       req.file.buffer,
       "lautech_resources",
+      req.file.mimetype
     );
 
     // 3. Determine Initial Status (Seniors/Admins bypass the pending queue)
@@ -54,6 +55,7 @@ export const uploadResourceFile = async (req: AuthRequest, res: Response) => {
       lecturerId,
       status: initialStatus,
       moderatedBy: initialStatus === ResourceStatus.APPROVED ? (user.id as any) : undefined,
+      session,
       // Injecting AI Metadata
       keywords: aiResult.keywords,
       aiSummary: aiResult.summary,
@@ -110,6 +112,7 @@ export const searchResources = async (req: Request, res: Response) => {
     const resources = await Resource.find(query)
       .populate("courseId", "courseCode title") // Fetch course details
       .populate("lecturerId", "name") // Fetch lecturer name
+      .populate("uploaderId", "name") // Fetch uploader name
       .select("-__v -moderatedBy") // Hide internal fields
       .sort({ createdAt: -1 }) // Newest first
       .skip(skip)
@@ -166,5 +169,88 @@ export const extractMetadata = async (req: AuthRequest, res: Response) => {
     return res
       .status(500)
       .json({ success: false, error: "Failed to extract metadata" });
+  }
+};
+
+export const getResourceById = async (req: Request, res: Response) => {
+  try {
+    const resource = await Resource.findById(req.params.id)
+      .populate("courseId", "courseCode title")
+      .populate("lecturerId", "name department")
+      .populate("uploaderId", "name");
+
+    if (!resource) {
+      return res.status(404).json({ success: false, error: "Resource not found" });
+    }
+
+    return res.status(200).json({ success: true, data: resource });
+  } catch (error) {
+    console.error("Get Resource Error:", error);
+    return res.status(500).json({ success: false, error: "Failed to fetch resource" });
+  }
+};
+
+export const voteResource = async (
+  req: AuthRequest,
+  res: Response,
+): Promise<void> => {
+  try {
+    if (!req.user) {
+      res.status(401).json({ success: false, error: "Not authorized" });
+      return;
+    }
+
+    const { voteType } = req.body; // Expects "up" or "down"
+    const userId = req.user._id;
+
+    const resource = await Resource.findById(req.params.id);
+    if (!resource) {
+      res.status(404).json({ success: false, error: "Resource not found" });
+      return;
+    }
+
+    // Convert ObjectIds to strings for accurate comparison
+    const upvotedStr = resource.likedBy.map((id) => id.toString());
+    const downvotedStr = resource.dislikedBy.map((id) => id.toString());
+    const userStr = userId.toString();
+
+    // Remove user from both arrays initially to reset their state
+    resource.likedBy = resource.likedBy.filter(
+      (id) => id.toString() !== userStr,
+    );
+    resource.dislikedBy = resource.dislikedBy.filter(
+      (id) => id.toString() !== userStr,
+    );
+
+    if (voteType === "up") {
+      if (!upvotedStr.includes(userStr)) {
+        // Add to upvotes if they hadn't already upvoted
+        resource.likedBy.push(userId);
+      }
+    } else if (voteType === "down") {
+      if (!downvotedStr.includes(userStr)) {
+        // Add to downvotes if they hadn't already downvoted
+        resource.dislikedBy.push(userId);
+      }
+    }
+
+    // Update counts
+    resource.likes = resource.likedBy.length;
+    resource.dislikes = resource.dislikedBy.length;
+
+    await resource.save();
+
+    res.status(200).json({
+      success: true,
+      data: {
+        likes: resource.likes,
+        dislikes: resource.dislikes,
+        userVote: voteType === "up" && !upvotedStr.includes(userStr) ? "up" :
+                  voteType === "down" && !downvotedStr.includes(userStr) ? "down" : null
+      },
+    });
+  } catch (error) {
+    console.error("Vote Resource Error:", error);
+    res.status(500).json({ success: false, error: "Failed to process vote" });
   }
 };

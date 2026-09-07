@@ -10,6 +10,7 @@ export const getAllDepartments = async (req: Request, res: Response) => {
   }
 };
 
+
 export const createDepartment = async (req: Request, res: Response) => {
   try {
     const { name } = req.body;

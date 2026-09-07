@@ -3,7 +3,7 @@ import { Resource, ResourceStatus } from "../models/Resource";
 import { User, UserRole } from "../models/User";
 import { deleteFromCloudinary } from "../utils/cloudinary";
 import { AuthRequest } from "../middlewares/authMiddleware";
-import { Lecturer } from "../models/Lecturer";
+import { ApprovalStatus, Lecturer } from "../models/Lecturer";
 
 // 1. Get all pending resources
 export const getPendingResources = async (req: Request, res: Response) => {
@@ -113,7 +113,7 @@ export const getAdminAnalytics = async (
       Resource.countDocuments({ status: ResourceStatus.PENDING }),
       Resource.countDocuments({ status: ResourceStatus.APPROVED }),
       Lecturer.countDocuments(),
-      Lecturer.countDocuments({ status: "approved" }),
+      Lecturer.countDocuments({ status: ApprovalStatus.APPROVED }),
       User.countDocuments({ role: { $ne: UserRole.ADMIN } }),
     ]);
 
