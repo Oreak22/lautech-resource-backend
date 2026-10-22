@@ -35,7 +35,7 @@ export interface IResource extends Document {
   keywords: string[];
   aiSummary: string;
   aiConfidenceScore: number;
-  rejectReason: String;
+  rejectReason: string;
 }
 
 const ResourceSchema = new Schema<IResource>(

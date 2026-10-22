@@ -3,8 +3,43 @@ import { Request, Response } from "express";
 import Review from "../models/Review";
 import { Resource, ResourceStatus } from "../models/Resource";
 import { AuthRequest } from "../middlewares/authMiddleware";
-import { ObjectIdQueryTypeCasting } from "mongoose";
-import { ObjectId } from "mongoose";
+import { ObjectIdQueryTypeCasting, ObjectId, Types } from "mongoose";
+import { Department } from "../models/Department";
+
+const resolveDepartmentName = async (lecturer: any): Promise<string> => {
+  const departmentReference = lecturer.departmentId;
+  const populatedName = departmentReference?.name;
+  if (typeof populatedName === "string" && populatedName.trim()) {
+    return populatedName;
+  }
+
+  // Support lecturer records created before departmentId became the canonical field.
+  if (typeof lecturer.department === "string" && lecturer.department.trim()) {
+    return lecturer.department;
+  }
+
+  if (departmentReference == null) return "Unknown Department";
+
+  const departmentId = departmentReference._id ?? departmentReference;
+  if (Types.ObjectId.isValid(String(departmentId))) {
+    const department = await Department.findById(departmentId)
+      .select("name")
+      .lean();
+    if (department?.name) return department.name;
+  }
+
+  if (typeof departmentReference === "string") {
+    const department = await Department.findOne({ name: departmentReference })
+      .select("name")
+      .lean();
+    if (department?.name) return department.name;
+
+    // A legacy record may store the department label directly in departmentId.
+    return departmentReference;
+  }
+
+  return "Unknown Department";
+};
 // interface AuthRequest extends Request {
 //   user?: { _id: string; name: string };
 // }
@@ -36,25 +71,43 @@ export const getAllLecturers = async (req: Request, res: Response): Promise<void
     }
 
     if (department && department !== 'All') {
-      query.department = department as string;
+      const departmentRecord = await Department.findOne({
+        name: String(department),
+      }).select("_id");
+
+      if (!departmentRecord) {
+        res.status(200).json({ success: true, count: 0, data: [] });
+        return;
+      }
+
+      query.departmentId = departmentRecord._id;
     }
-
-    let sortOption: any = { name: 1 };
-
-    if (sortBy === 'department') {
-      sortOption = { department: 1, name: 1 };
-    }
-
-    console.log(query)
 
     const lecturers = await Lecturer.find(query)
-      .select('_id name department isVerified')
-      .sort(sortOption)
+      .populate("departmentId", "name")
+      .select("_id name departmentId isVerified")
+      .sort({ name: 1 })
       .lean();
+
+    const data = await Promise.all(
+      lecturers.map(async (lecturer: any) => ({
+        ...lecturer,
+        department: await resolveDepartmentName(lecturer),
+      })),
+    );
+
+    if (sortBy === "department") {
+      data.sort(
+        (a, b) =>
+          a.department.localeCompare(b.department) ||
+          a.name.localeCompare(b.name),
+      );
+    }
+
     res.status(200).json({
       success: true,
-      count: lecturers.length,
-      data: lecturers,
+      count: data.length,
+      data,
     });
   } catch (error: unknown) {
     console.error('Error fetching lecturers:', error);
@@ -97,6 +150,9 @@ export const getLecturerProfile = async (
       lecturerId: req.params.id,
       status: "approved" as ResourceStatus,
     })
+      .populate("courseId", "courseCode title")
+      .populate("lecturerId", "name")
+      .populate("uploaderId", "name")
       .sort({ createdAt: -1 })
       .lean();
 
@@ -108,7 +164,7 @@ export const getLecturerProfile = async (
 
     const profilePayload = {
       ...lecturer,
-      department: (lecturer.departmentId as any)?.name || "Unknown Department",
+      department: await resolveDepartmentName(lecturer),
       // Mocking teachingTags for now since they aren't in the schema yet
       teachingTags: ["Strict Grading", "Detailed Notes", "Research Focused"],
       resources,

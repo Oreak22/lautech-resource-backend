@@ -68,10 +68,18 @@ export const approveResource = async (req: AuthRequest, res: Response) => {
   }
 };
 
-// 3. Reject and Delete a resource
+// 3. Reject a pending resource and preserve the rejection reason for its uploader.
 export const rejectResource = async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
+    const reason = typeof req.body?.reason === "string" ? req.body.reason.trim() : "";
+
+    if (!reason || reason.length > 500) {
+      return res.status(400).json({
+        success: false,
+        error: "A rejection reason of 1 to 500 characters is required",
+      });
+    }
 
     const resource = await Resource.findById(id);
     if (!resource)
@@ -79,17 +87,21 @@ export const rejectResource = async (req: AuthRequest, res: Response) => {
         .status(404)
         .json({ success: false, error: "Resource not found" });
 
-    // Delete the physical file from Cloudinary to save space
+    if (resource.status !== ResourceStatus.PENDING) {
+      return res.status(400).json({ success: false, error: "Only pending resources can be rejected" });
+    }
+
+    // Remove the physical file, but retain the record and reason for the uploader.
     if (resource.cloudinaryPublicId) {
       await deleteFromCloudinary(resource.cloudinaryPublicId);
     }
 
-    // Delete the database record (or change status to REJECTED if you prefer to keep a paper trail)
-    await resource.deleteOne();
+    resource.status = ResourceStatus.REJECTED;
+    resource.rejectReason = reason;
+    resource.moderatedBy = req.user!._id;
+    await resource.save();
 
-    return res
-      .status(200)
-      .json({ success: true, message: "Resource rejected and deleted" });
+    return res.status(200).json({ success: true, data: resource, message: "Resource rejected" });
   } catch (error) {
     return res
       .status(500)

@@ -11,6 +11,8 @@ import courseRouter from "./routes/courseRouter";
 import lecturersRouter from "./routes/lecturersRouter";
 import reviewRoutes from "./routes/reviewRoutes";
 import departmentRoutes from "./routes/departmentRoutes";
+import dashboardRoutes from "./routes/dashboardRoutes";
+import reportRoutes from "./routes/reportRoutes";
 
 dotenv.config();
 connectDB();
@@ -51,6 +53,8 @@ app.use("/api/courses", courseRouter);
 app.use("/api/lecturers", lecturersRouter);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/departments", departmentRoutes);
+app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/reports", reportRoutes);
 
 app.listen(PORT, () => {
   console.log(

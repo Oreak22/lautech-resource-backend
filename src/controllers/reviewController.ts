@@ -1,9 +1,6 @@
 import { Request, Response } from "express";
 import Review from "../models/Review";
-
-interface AuthRequest extends Request {
-  user?: { _id: string };
-}
+import { AuthRequest } from "../middlewares/authMiddleware";
 
 // @desc    Toggle upvote/downvote on a review
 // @route   PUT /api/reviews/:id/vote
@@ -61,5 +58,69 @@ export const voteReview = async (
   } catch (error: unknown) {
     console.error("Error voting on review:", error);
     res.status(500).json({ success: false, error: "Server Error" });
+  }
+};
+
+export const updateMyReview = async (
+  req: AuthRequest,
+  res: Response,
+): Promise<void> => {
+  try {
+    if (!req.user) {
+      res.status(401).json({ success: false, error: "Not authorized" });
+      return;
+    }
+
+    const content = typeof req.body.content === "string" ? req.body.content.trim() : "";
+    if (content.length < 10 || content.length > 500) {
+      res.status(400).json({
+        success: false,
+        error: "Review must be between 10 and 500 characters",
+      });
+      return;
+    }
+
+    const review = await Review.findOne({
+      _id: req.params.id,
+      user: req.user._id,
+    });
+    if (!review) {
+      res.status(404).json({ success: false, error: "Review not found" });
+      return;
+    }
+
+    review.content = content;
+    await review.save();
+
+    res.status(200).json({ success: true, data: review });
+  } catch (error) {
+    console.error("Update Review Error:", error);
+    res.status(500).json({ success: false, error: "Failed to update review" });
+  }
+};
+
+export const deleteMyReview = async (
+  req: AuthRequest,
+  res: Response,
+): Promise<void> => {
+  try {
+    if (!req.user) {
+      res.status(401).json({ success: false, error: "Not authorized" });
+      return;
+    }
+
+    const review = await Review.findOneAndDelete({
+      _id: req.params.id,
+      user: req.user._id,
+    });
+    if (!review) {
+      res.status(404).json({ success: false, error: "Review not found" });
+      return;
+    }
+
+    res.status(200).json({ success: true, message: "Review removed" });
+  } catch (error) {
+    console.error("Delete Review Error:", error);
+    res.status(500).json({ success: false, error: "Failed to remove review" });
   }
 };

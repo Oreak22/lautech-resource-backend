@@ -24,6 +24,11 @@ export interface IUser extends Document {
   password?: string;
   googleId?: string;
   matricNumber?: string;
+  phone?: string;
+  department?: string;
+  faculty?: string;
+  currentLevel?: string;
+  bio?: string;
   role: UserRole;
   trustScore: number;
   matchPassword(enteredPassword: string): Promise<boolean>;
@@ -50,7 +55,12 @@ const UserSchema = new Schema<IUser>(
     },
     password: { type: String, minlength: 6 }, // Optional for Google Auth users
     googleId: { type: String, sparse: true, unique: true },
-    matricNumber: { type: String, trim: true },
+    matricNumber: { type: String, trim: true, maxlength: 30 },
+    phone: { type: String, trim: true, maxlength: 25 },
+    department: { type: String, trim: true, maxlength: 120 },
+    faculty: { type: String, trim: true, maxlength: 120 },
+    currentLevel: { type: String, trim: true, maxlength: 30 },
+    bio: { type: String, trim: true, maxlength: 500 },
     role: {
       type: String,
       enum: Object.values(UserRole),

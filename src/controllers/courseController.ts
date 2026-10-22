@@ -8,7 +8,7 @@ export const getAllCourses = async (
 ): Promise<void> => {
   try {
     const courses = await Course.find({})
-      .select("_id courseCode title")
+      .select("_id courseCode title department")
       .sort({ courseCode: 1 })
       .lean();
 

@@ -23,7 +23,7 @@ export const analyzeStudyMaterial = async (
   mimeType: string,
 ): Promise<AIAnalysisResult> => {
   const model = genAI.getGenerativeModel({
-    model: "gemini-3.6-flash",
+    model: "gemini-3.5-flash-lite",
     generationConfig: {
       responseMimeType: "application/json", // Maintain this to prevent JSON parsing crashes
     },
@@ -48,7 +48,9 @@ export const analyzeStudyMaterial = async (
     "suggestedCategory": string | null,
     "keywords": ["word1", "word2"], 
     "summary": "string", 
-    "confidence": number 
+    "confidence": number, 
+    "course": string | null,
+    "lecturer": string | null
   }`;
 
   const fileData = {
@@ -59,7 +61,10 @@ export const analyzeStudyMaterial = async (
     const result = await model.generateContent([prompt, fileData]);
     const responseText = result.response.text();
     // Strip markdown formatting if Gemini wrapped it in ```json ... ```
-    const jsonString = responseText.replace(/^```json\s*/, "").replace(/\s*```$/, "").trim();
+    const jsonString = responseText
+      .replace(/^```json\s*/, "")
+      .replace(/\s*```$/, "")
+      .trim();
     return JSON.parse(jsonString) as AIAnalysisResult;
   } catch (error) {
     console.error("AI Analysis failed:", error);

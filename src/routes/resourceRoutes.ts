@@ -5,6 +5,7 @@ import {
   extractMetadata,
   getResourceById,
   voteResource,
+  deleteMyResource,
 } from "../controllers/resourceController";
 import { protect } from "../middlewares/authMiddleware";
 import { upload } from "../middlewares/uploadMiddleware";
@@ -22,5 +23,6 @@ router.post("/upload", protect, upload.single("file"), uploadResourceFile);
 
 // 3. Vote on a resource
 router.put("/:id/vote", protect, voteResource);
+router.delete("/:id", protect, deleteMyResource);
 
 export default router;
