@@ -20,12 +20,19 @@ connectDB();
 
 const app: Application = express();
 const PORT = process.env.PORT || 5000;
+const allowedOrigins = ["https://lautech-resource.vercel.app", process.env.CLIENT_URL, process.env.FRONTEND_URL]
+  .flatMap((value) => (value || "").split(","))
+  .map((origin) => origin.trim().replace(/\/+$/, ""))
+  .filter(Boolean);
 
 // 1. Security Middleware
 app.use(helmet()); // Sets secure HTTP headers
 app.use(
   cors({
-    origin: process.env.CLIENT_URL || "https://lautech-resource.vercel.app",
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
+      return callback(null, false);
+    },
     credentials: true,
   }),
 );
