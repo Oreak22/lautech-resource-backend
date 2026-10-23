@@ -13,6 +13,7 @@ import reviewRoutes from "./routes/reviewRoutes";
 import departmentRoutes from "./routes/departmentRoutes";
 import dashboardRoutes from "./routes/dashboardRoutes";
 import reportRoutes from "./routes/reportRoutes";
+import resourceListRoutes from "./routes/resourceListRoutes";
 
 dotenv.config();
 connectDB();
@@ -55,6 +56,7 @@ app.use("/api/reviews", reviewRoutes);
 app.use("/api/departments", departmentRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/reports", reportRoutes);
+app.use("/api/lists", resourceListRoutes);
 
 app.listen(PORT, () => {
   console.log(
