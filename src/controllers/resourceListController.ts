@@ -20,7 +20,8 @@ const sendList = (res: Response, list: any, status = 200) => {
   return res.status(status).json({ success: true, data });
 };
 
-const validId = (value: string) => Types.ObjectId.isValid(value);
+const validId = (value: unknown): value is string =>
+  typeof value === "string" && Types.ObjectId.isValid(value);
 
 export const getMyResourceLists = async (req: AuthRequest, res: Response) => {
   try {
